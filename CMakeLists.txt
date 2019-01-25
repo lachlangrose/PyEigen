@@ -7,7 +7,20 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
-
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+# Update submodules as needed
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+    if(GIT_SUBMODULE)
+        message(STATUS "Submodule update")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        endif()
+    endif()
+endif()
 # Get Eigen dependency
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Eigen3 REQUIRED)
@@ -24,6 +37,6 @@ find_package(Eigen3 REQUIRED)
 #include_directories(${CHOLMOD_INCLUDES})
 #include_directories(${SUITESPARSE_INCLUDES})
 #add pybind11
-#add_subdirectory(third_party/pybind11)
-#pybind11_add_module(PyEigen eigen_wrapper.cpp)
+add_subdirectory(pybind11)
+pybind11_add_module(PyEigen eigen_wrapper.cpp)
 #target_link_libaries(spqr cholmod suitesparseconfig lapack openblas cudart cublas cuda SuiteSparse_GPURuntime GPUQREngine)
